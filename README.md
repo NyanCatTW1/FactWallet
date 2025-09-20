@@ -2,7 +2,7 @@
 ```
 Licence: MIT Licence
 Language: Python (>= 3.8)
-Homepage: https://www.fact0rn.io
+Homepage: https://www.projectfactor.io
 ```
 
 ## Getting started
@@ -103,7 +103,6 @@ $ ./run_electrum
 
 ### Run tests
 
-TODO: tests need to be redone for the Fact0rn blockchain.
 
 Run unit tests with `pytest`:
 ```
@@ -134,6 +133,6 @@ Implementing new features, or improving/refactoring the codebase, is of course
 also welcome, but to avoid wasted effort, especially for larger changes,
 we encourage discussing these on the issue tracker or Discord first.
 
-Besides [GitHub](https://github.com/FACT0RN/FactWallet),
+Besides [GitHub](https://github.com/ProjectFactor/FactWallet),
 most communication about Electrum development happens on Discord, in the
 `Fact0rn` [server](https://discord.gg/Mfzp2QtmQG). 

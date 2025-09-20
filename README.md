@@ -135,4 +135,4 @@ we encourage discussing these on the issue tracker or Discord first.
 
 Besides [GitHub](https://github.com/ProjectFactor/FactWallet),
 most communication about Electrum development happens on Discord, in the
-`Fact0rn` [server](https://discord.gg/Mfzp2QtmQG). 
+`FACTOR` [server](https://discord.gg/Mfzp2QtmQG). 

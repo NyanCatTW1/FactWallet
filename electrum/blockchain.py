@@ -44,8 +44,31 @@ HEADER_SIZE = 218  # bytes
 # see https://github.com/FACT0RN/FACT0RN/blob/main/src/chainparams.cpp#L85
 # FACT0RN is the opposite of bitcoin in this regard, we do not have a maximum
 # value for a hash, but rather a minimum value for factorization measured in bits.
-# TODO: change MAX_TARGET variable name to MIN_TARGET everywhere it is used.
-MAX_TARGET = 230
+MIN_TARGET = 230
+
+"""
+$ ./factorn-cli getblockchaininfo
+{
+  (...)
+  "softforks": {
+    (...)
+    "hard_diff_removal": {
+      "type": "bip9",
+      "bip9": {
+        "status": "active",
+        "start_time": 1743465600,
+        "timeout": 1775001600,
+        "since": 168672,
+        "min_activation_height": 160000
+      },
+      "height": 168672,
+      "active": true
+    }
+  },
+  "warnings": ""
+}
+"""
+MAINNET_HARD_DIFF_REMOVAL_ACTIVATION_HEIGHT = 168672
 
 class MissingHeader(Exception):
     pass
@@ -565,7 +588,7 @@ class Blockchain(Logger):
         if constants.net.TESTNET:
             return 0
         if index == -1:
-            return MAX_TARGET
+            return MIN_TARGET
 
         # new target
         first = self.read_header(index * 672)
@@ -576,13 +599,38 @@ class Blockchain(Logger):
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
         nTargetTimespan = 14 * 24 * 60 * 60
         nRatio = nActualTimespan/nTargetTimespan
-        new_target = last.get("bits")
+        nBits = int(last.get("bits"))
+        new_target = nBits
 
-        #Retarget
-        if nRatio > 1.0333:
-            new_target -= 1
-        elif nRatio < 0.90:
-            new_target += 1
+        # Determine if hard diff removal is active
+        firstBlockHeightThisEpoch = (index + 1) * 672
+        hardDiffRemoved = firstBlockHeightThisEpoch >= MAINNET_HARD_DIFF_REMOVAL_ACTIVATION_HEIGHT
+
+        # Retarget
+        if hardDiffRemoved:
+            if nRatio > 1.0333:
+                if nBits % 2 == 0:
+                    new_target -= 2
+                else:
+                    new_target -= 1
+
+                if nRatio > 2.0:
+                    new_target -= 2
+            elif nRatio < 0.90:
+                if nBits % 2 == 0:
+                    new_target += 2
+                else:
+                    new_target += 1
+
+                if nRatio < 0.5:
+                    new_target += 2
+            elif nBits % 2 == 1:
+                new_target -= 1
+        else:
+            if nRatio > 1.0333:
+                new_target -= 1
+            elif nRatio < 0.90:
+                new_target += 1
 
         return new_target
 

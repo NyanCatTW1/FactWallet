@@ -7,16 +7,25 @@ FROM debian:buster@sha256:233c3bbc892229c82da7231980d50adceba4db56a08c0b7053a485
 ENV LC_ALL=C.UTF-8 LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 
-# need ca-certificates before using snapshot packages
-RUN apt update -qq > /dev/null && apt install -qq --yes --no-install-recommends \
-    ca-certificates
+# bootstrap CA certificates using the default Debian mirrors (HTTP) before
+# switching over to the pinned snapshot archives
+RUN apt-get update -q && \
+    apt-get install -qy --no-install-recommends \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY apt.conf.d/99snapshot /etc/apt/apt.conf.d/99snapshot
 
 # pin the distro packages
+# Use the Debian snapshot archives and disable Release file expiration checks
 COPY apt.sources.list /etc/apt/sources.list
 COPY apt.preferences /etc/apt/preferences.d/snapshot
+COPY apt.conf.d/99snapshot /etc/apt/apt.conf.d/99snapshot
 
 RUN apt-get update -q && \
     apt-get install -qy --allow-downgrades \
+        ca-certificates \
+        build-essential \
         sudo \
         git \
         wget \
@@ -27,16 +36,24 @@ RUN apt-get update -q && \
         autopoint \
         pkg-config \
         xz-utils \
+        patch \
         libssl-dev \
         libssl1.1 \
         openssl \
         zlib1g-dev \
         libffi-dev \
+        libbz2-dev \
+        libreadline-dev \
         libncurses5-dev \
         libncurses5 \
         libtinfo-dev \
         libtinfo5 \
         libsqlite3-dev \
+        libgdbm-dev \
+        libgdbm-compat-dev \
+        libnss3-dev \
+        liblzma-dev \
+        libexpat1-dev \
         libusb-1.0-0-dev \
         libudev-dev \
         libudev1 \
@@ -81,6 +98,6 @@ RUN usermod -append --groups sudo ${USER}
 RUN echo "%sudo ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 WORKDIR ${WORK_DIR}
 RUN chown --recursive ${USER} ${WORK_DIR}
-RUN apt update &&  apt install -y python3-pip 
+RUN apt-get update -q && apt-get install -qy python3-pip
 RUN pip3 install sympy mpmath
 USER ${USER}

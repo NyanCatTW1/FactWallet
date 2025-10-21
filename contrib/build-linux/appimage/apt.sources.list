@@ -1,2 +1,12 @@
+# Debian buster snapshot pinned for deterministic builds
+# Main repository
 deb https://snapshot.debian.org/archive/debian/20230317T205011Z/ buster main
 deb-src https://snapshot.debian.org/archive/debian/20230317T205011Z/ buster main
+
+# Security updates
+deb https://snapshot.debian.org/archive/debian-security/20230317T205011Z/ buster/updates main
+deb-src https://snapshot.debian.org/archive/debian-security/20230317T205011Z/ buster/updates main
+
+# Point releases / updates
+deb https://snapshot.debian.org/archive/debian/20230317T205011Z/ buster-updates main
+deb-src https://snapshot.debian.org/archive/debian/20230317T205011Z/ buster-updates main

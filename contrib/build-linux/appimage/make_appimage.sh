@@ -38,7 +38,7 @@ download_if_not_exist "$CACHEDIR/functions.sh" "https://raw.githubusercontent.co
 verify_hash "$CACHEDIR/functions.sh" "8f67711a28635b07ce539a9b083b8c12d5488c00003d6d726c7b134e553220ed"
 
 download_if_not_exist "$CACHEDIR/appimagetool" "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-verify_hash "$CACHEDIR/appimagetool" "b90f4a8b18967545fda78a445b27680a1642f1ef9488ced28b65398f2be7ad2d"
+verify_hash "$CACHEDIR/appimagetool" "b90f4a8b18967545fda78a445b27680a1642f1ef9488ced28b65398f2be7add2"
 
 download_if_not_exist "$CACHEDIR/Python-$PYTHON_VERSION.tar.xz" "https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tar.xz"
 verify_hash "$CACHEDIR/Python-$PYTHON_VERSION.tar.xz" "3c3bc3048303721c904a03eb8326b631e921f11cc3be2988456a42f115daf04c"

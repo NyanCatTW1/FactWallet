@@ -9,10 +9,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # bootstrap CA certificates using the default Debian mirrors (HTTP) before
 # switching over to the pinned snapshot archives
-RUN apt-get update -q && \
+RUN printf 'deb http://archive.debian.org/debian buster main\n' \
+        'deb http://archive.debian.org/debian buster-updates main\n' \
+        'deb http://archive.debian.org/debian-security buster/updates main\n' \
+        > /etc/apt/sources.list && \
+    printf 'Acquire::Check-Valid-Until "0";\nAcquire::AllowInsecureRepositories "1";\n' \
+        > /etc/apt/apt.conf.d/99oldstable && \
+    apt-get update -q \
+        -o Acquire::Check-Valid-Until=false \
+        -o Acquire::AllowInsecureRepositories=true && \
     apt-get install -qy --no-install-recommends \
         ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    rm /etc/apt/apt.conf.d/99oldstable
 
 COPY apt.conf.d/99snapshot /etc/apt/apt.conf.d/99snapshot
 

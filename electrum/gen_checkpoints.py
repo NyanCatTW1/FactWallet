@@ -55,7 +55,7 @@ def main():
         print(f"Error: factorn-cli not found at {cli_path}", file=sys.stderr)
         sys.exit(1)
 
-    chain_height = get_block_count(cli_path)
+    chain_height = min(168672 + 1344, get_block_count(cli_path))
     num_chunks = chain_height // CHUNK_SIZE
     # We need at least one complete chunk beyond the checkpoint to verify against
     num_checkpoints = num_chunks - 1

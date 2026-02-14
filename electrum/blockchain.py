@@ -53,22 +53,58 @@ $ ./factorn-cli getblockchaininfo
   "softforks": {
     (...)
     "hard_diff_removal": {
+      "type": "buried",
+      "active": true,
+      "height": 168672
+    },
+    "interim_daa": {
       "type": "bip9",
       "bip9": {
-        "status": "active",
-        "start_time": 1743465600,
-        "timeout": 1775001600,
-        "since": 168672,
-        "min_activation_height": 160000
+        "status": "locked_in",
+        "start_time": 1767225600,
+        "timeout": 1784505600,
+        "since": 172116,
+        "min_activation_height": 0
       },
-      "height": 168672,
-      "active": true
+      "active": false
     }
   },
-  "warnings": ""
+  (...)
 }
 """
 MAINNET_HARD_DIFF_REMOVAL_ACTIVATION_HEIGHT = 168672
+
+MAINNET_INTERIM_DAA_ACTIVATION_HEIGHT = 172116 + 42  # 172158
+MAINNET_INTERIM_DAA_END_HEIGHT = MAINNET_INTERIM_DAA_ACTIVATION_HEIGHT + 1344  # 173502
+INTERIM_DAA_PERIOD = 42
+INTERIM_DAA_TARGET_TIMESPAN = (INTERIM_DAA_PERIOD - 1) * 30 * 60  # 73800 seconds
+
+
+def is_interim_daa_active(height: int) -> bool:
+    return MAINNET_INTERIM_DAA_ACTIVATION_HEIGHT <= height < MAINNET_INTERIM_DAA_END_HEIGHT
+
+
+def calculate_interim_daa_delta(nBits: int, proportion: float) -> int:
+    # See CalculateInterimDifficultyDelta in src/pow.cpp
+    delta = 0
+    if nBits % 2 != 0:
+        delta -= 1
+
+    if proportion < 0.5:
+        delta += 6
+    elif proportion < 0.6667:
+        delta += 4
+    elif proportion < 0.9:
+        delta += 2
+    elif proportion > 2.0:
+        delta -= 6
+    elif proportion > 1.5:
+        delta -= 4
+    elif proportion > 1.0333:
+        delta -= 2
+
+    return delta
+
 
 class MissingHeader(Exception):
     pass
@@ -630,16 +666,32 @@ class Blockchain(Logger):
 
         return new_target
 
+    def get_interim_daa_target(self, chunk_index: int) -> int:
+        """Compute target for chunk chunk_index+1 using the 42-block interim DAA."""
+        first_height = chunk_index * constants.CHUNK_SIZE
+        last_height = first_height + constants.CHUNK_SIZE - 1
+        first = self.read_header(first_height)
+        last = self.read_header(last_height)
+        if not first or not last:
+            raise MissingHeader()
+
+        nActualTimespan = last.get('timestamp') - first.get('timestamp')
+        proportion = nActualTimespan / INTERIM_DAA_TARGET_TIMESPAN
+        nBits = int(last.get('bits'))
+        delta = calculate_interim_daa_delta(nBits, proportion)
+        return nBits + delta
+
     def get_target(self, chunk_index: int) -> int:
-        """Returns the target applicable to chunk chunk_index+1,
-        derived from the retarget epoch that contains it."""
+        """Returns the target applicable to chunk chunk_index+1."""
         if constants.net.TESTNET:
             return 0
         if chunk_index == -1:
             return MIN_TARGET
-        # The target applies to chunk chunk_index+1.
-        # Determine which retarget epoch chunk_index+1 falls in.
         next_chunk_start = (chunk_index + 1) * constants.CHUNK_SIZE
+
+        if is_interim_daa_active(next_chunk_start):
+            return self.get_interim_daa_target(chunk_index)
+
         epoch_index = next_chunk_start // constants.RETARGET_INTERVAL
         if epoch_index == 0:
             return MIN_TARGET

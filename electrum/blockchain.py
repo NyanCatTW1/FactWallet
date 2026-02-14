@@ -687,6 +687,9 @@ class Blockchain(Logger):
             return 0
         if chunk_index == -1:
             return MIN_TARGET
+        if chunk_index < len(self.checkpoints):
+            _, target = self.checkpoints[chunk_index]
+            return target
         next_chunk_start = (chunk_index + 1) * constants.CHUNK_SIZE
 
         if is_interim_daa_active(next_chunk_start):
